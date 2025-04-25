@@ -1,0 +1,16 @@
+name: secure-coding
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.8
+  - flask
+  - flask-sqlalchemy
+  - flask-login
+  - flask-wtf
+  - werkzeug
+  - pillow
+  - pip
+  - pip:
+    - email_validator
+    - python-dotenv 
