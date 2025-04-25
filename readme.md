@@ -1,29 +1,72 @@
-# Secure Coding
+# 보안 코딩 프로젝트
 
-## Tiny Secondhand Shopping Platform.
+소규모 중고 쇼핑 플랫폼입니다. 사용자 간의 안전한 거래와 커뮤니케이션을 위한 보안 기능이 구현되어 있습니다.
 
-You should add some functions and complete the security requirements.
+## 시스템 요구사항
 
-## requirements
+- Python 3.8 이상
+- Miniconda 또는 Anaconda
 
-if you don't have a miniconda(or anaconda), you can install it on this url. - https://docs.anaconda.com/free/miniconda/index.html
+Miniconda가 설치되어 있지 않다면 다음 URL에서 설치할 수 있습니다:
+- https://docs.anaconda.com/free/miniconda/index.html
 
-```
+## 설치 방법
+
+1. 저장소 클론:
+```bash
 git clone https://github.com/ugonfor/secure-coding
-conda env create -f enviroments.yaml
+cd secure-coding
 ```
 
-## usage
-
-run the server process.
-
+2. 가상환경 생성 및 의존성 설치:
+```bash
+conda env create -f environments.yaml
 ```
+
+3. 가상환경 활성화:
+```bash
+conda activate secure-coding
+```
+
+## 실행 방법
+
+1. 서버 실행:
+```bash
 python app.py
 ```
 
-if you want to test on external machine, you can utilize the ngrok to forwarding the url.
-```
-# optional
+기본적으로 서버는 http://localhost:8080 에서 실행됩니다.
+
+## 외부 접속 설정 (선택사항)
+
+외부에서 접속 가능한 URL을 생성하려면 ngrok을 사용할 수 있습니다:
+
+1. ngrok 설치 (Ubuntu/Debian):
+```bash
 sudo snap install ngrok
-ngrok http 5000
+```
+
+2. ngrok을 통한 터널링:
+```bash
+ngrok http 8080
+```
+
+## 주요 기능
+
+- 사용자 인증 (회원가입/로그인)
+- 상품 등록 및 관리
+- 상품 검색 및 필터링
+- 사용자 간 메시지 전송
+- 신고 시스템
+- 관리자 대시보드
+
+## 보안 기능
+
+- CSRF 보호
+- XSS 방지
+- SQL Injection 방지
+- 안전한 파일 업로드
+- 비밀번호 암호화
+- 세션 관리
+
 ```
