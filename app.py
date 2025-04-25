@@ -107,7 +107,7 @@ def init_db():
             )
         """)
         
-        # 상품 테이블 생성
+        # 상품 테이블 생성 - TIMESTAMP 기본값 제거
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS product (
                 id TEXT PRIMARY KEY,
@@ -116,7 +116,7 @@ def init_db():
                 price INTEGER NOT NULL,
                 image_path TEXT,
                 seller_id TEXT NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                created_at TIMESTAMP NOT NULL,
                 report_count INTEGER DEFAULT 0,
                 FOREIGN KEY (seller_id) REFERENCES user(id)
             )
@@ -360,11 +360,19 @@ def dashboard():
     cursor.execute("SELECT * FROM product")
     all_products = cursor.fetchall()
     
-    # 상품 목록의 created_at을 datetime 객체로 변환
+    # 상품 목록의 created_at을 datetime 객체로 변환 (KST)
     products = []
     for product in all_products:
         product = dict(product)
-        product['created_at'] = datetime.strptime(product['created_at'], '%Y-%m-%d %H:%M:%S')
+        try:
+            # ISO 형식의 타임스탬프 처리
+            created_at_str = product['created_at'].split('.')[0]  # 마이크로초 제거
+            created_at = datetime.strptime(created_at_str, '%Y-%m-%d %H:%M:%S')
+            created_at = korea_tz.localize(created_at)
+        except (ValueError, AttributeError):
+            # 파싱 실패 시 현재 시간으로 대체
+            created_at = datetime.now(korea_tz)
+        product['created_at'] = created_at
         products.append(product)
     
     return render_template('dashboard.html', products=products, user=current_user)
@@ -401,7 +409,8 @@ def profile(username=None):
         products = cursor.fetchall()
         products = [dict(p) for p in products]
         for product in products:
-            product['created_at'] = datetime.strptime(product['created_at'], '%Y-%m-%d %H:%M:%S')
+            created_at = datetime.strptime(product['created_at'], '%Y-%m-%d %H:%M:%S')
+            product['created_at'] = pytz.UTC.localize(created_at).astimezone(korea_tz)
         
         return render_template('profile.html', user=user, products=products, is_viewer=True)
     
@@ -423,7 +432,8 @@ def profile(username=None):
     products = cursor.fetchall()
     products = [dict(p) for p in products]
     for product in products:
-        product['created_at'] = datetime.strptime(product['created_at'], '%Y-%m-%d %H:%M:%S')
+        created_at = datetime.strptime(product['created_at'], '%Y-%m-%d %H:%M:%S')
+        product['created_at'] = pytz.UTC.localize(created_at).astimezone(korea_tz)
     
     # 편집 모드 여부 확인
     edit_mode = request.args.get('edit') == 'true'
@@ -535,7 +545,7 @@ def new_product():
             
         product_id = str(uuid.uuid4())
         
-        # 한국 시간으로 현재 시간 저장
+        # 한국 시간으로 현재 시간 설정
         current_time = datetime.now(korea_tz).strftime('%Y-%m-%d %H:%M:%S')
         
         cursor.execute("""
@@ -573,9 +583,10 @@ def view_product(product_id):
         flash('상품을 찾을 수 없습니다.')
         return redirect(url_for('dashboard'))
     
-    # 상품 정보를 딕셔너리로 변환하고 created_at을 datetime 객체로 변환
+    # 상품 정보를 딕셔너리로 변환하고 created_at을 datetime 객체로 변환 (KST)
     product = dict(product)
-    product['created_at'] = datetime.strptime(product['created_at'], '%Y-%m-%d %H:%M:%S')
+    created_at = datetime.strptime(product['created_at'], '%Y-%m-%d %H:%M:%S')
+    product['created_at'] = pytz.UTC.localize(created_at).astimezone(korea_tz)
         
     # 판매자 정보가 없으면 알 수 없음으로 설정
     if not product['seller_username']:
@@ -1155,11 +1166,9 @@ def format_datetime(value):
             return value  # 변환 실패 시 원본 값 반환
     
     # 한국 시간대로 변환
-    korea_tz = pytz.timezone('Asia/Seoul')
     if not value.tzinfo:
-        value = pytz.UTC.localize(value)
-    korea_time = value.astimezone(korea_tz)
-    return korea_time.strftime('%Y년 %m월 %d일 %H:%M')
+        value = korea_tz.localize(value)
+    return value.strftime('%Y년 %m월 %d일 %H:%M')
 
 @app.route('/transfer/<user_id>', methods=['POST'])
 @login_required
