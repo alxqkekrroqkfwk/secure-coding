@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h5>채팅방</h5>
+                </div>
+                <div class="card-body chat-messages" style="height: 400px; overflow-y: auto;">
+                    {% for message in messages %}
+                    <div class="message {% if message.sender_id == current_user.id %}text-right{% endif %} mb-2">
+                        <small class="text-muted">{{ message.sender.username }}</small>
+                        <div class="message-content p-2 {% if message.sender_id == current_user.id %}bg-primary text-white{% else %}bg-light{% endif %} rounded">
+                            {{ message.content }}
+                        </div>
+                        <small class="text-muted">{{ format_datetime(message.timestamp) }}</small>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="card-footer">
+                    <form id="message-form">
+                        <div class="input-group">
+                            <input type="text" id="message-input" class="form-control" placeholder="메시지를 입력하세요...">
+                            <div class="input-group-append">
+                                <button class="btn btn-primary" type="submit">전송</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+<script>
+    var socket = io();
+    var messageForm = document.getElementById('message-form');
+    var messageInput = document.getElementById('message-input');
+    var chatMessages = document.querySelector('.chat-messages');
+
+    messageForm.onsubmit = function(e) {
+        e.preventDefault();
+        if (messageInput.value.trim()) {
+            socket.emit('send_message', {
+                room_id: {{ room_id }},
+                content: messageInput.value
+            });
+            messageInput.value = '';
+        }
+    };
+
+    socket.on('receive_message', function(data) {
+        var messageDiv = document.createElement('div');
+        messageDiv.className = 'message mb-2' + (data.sender_id == {{ current_user.id }} ? ' text-right' : '');
+        
+        var senderSpan = document.createElement('small');
+        senderSpan.className = 'text-muted';
+        senderSpan.textContent = data.username;
+        
+        var contentDiv = document.createElement('div');
+        contentDiv.className = 'message-content p-2 rounded ' + 
+            (data.sender_id == {{ current_user.id }} ? 'bg-primary text-white' : 'bg-light');
+        contentDiv.textContent = data.content;
+        
+        var timeSpan = document.createElement('small');
+        timeSpan.className = 'text-muted';
+        timeSpan.textContent = data.timestamp;
+        
+        messageDiv.appendChild(senderSpan);
+        messageDiv.appendChild(contentDiv);
+        messageDiv.appendChild(timeSpan);
+        
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    });
+
+    // 페이지 로드 시 스크롤을 맨 아래로
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+</script>
+{% endblock %} 

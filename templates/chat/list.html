@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>채팅 목록</h2>
+    <div class="list-group mt-3">
+        {% for chat in chats %}
+        <a href="{{ url_for('chat_room', room_id=chat.room_id) }}" class="list-group-item list-group-item-action">
+            <div class="d-flex w-100 justify-content-between">
+                <h5 class="mb-1">{{ chat.other_user.username }}</h5>
+                {% if chat.last_message %}
+                <small>{{ chat.last_message.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                {% endif %}
+            </div>
+            <p class="mb-1">
+                {% if chat.last_message %}
+                {{ chat.last_message.content[:50] }}{% if chat.last_message.content|length > 50 %}...{% endif %}
+                {% else %}
+                대화를 시작해보세요
+                {% endif %}
+            </p>
+            {% if chat.unread_count > 0 %}
+            <span class="badge bg-primary rounded-pill">{{ chat.unread_count }}</span>
+            {% endif %}
+        </a>
+        {% else %}
+        <div class="text-center py-4">
+            <p>아직 채팅방이 없습니다.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %} 

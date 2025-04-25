@@ -1,0 +1,308 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card profile-card">
+                <div class="card-body">
+                    <div class="text-center">
+                        <div class="profile-image-container mb-4">
+                            {% if user.profile_image %}
+                                <img src="{{ url_for('static', filename=user.profile_image) }}" class="rounded-circle profile-image" alt="프로필 이미지">
+                            {% else %}
+                                <img src="{{ url_for('static', filename='images/default-profile.svg') }}" class="rounded-circle profile-image" alt="기본 프로필 이미지">
+                            {% endif %}
+                        </div>
+                        
+                        <h3 class="mb-3">{{ user.username }}</h3>
+                        
+                        {% if not is_viewer %}
+                        <!-- 자신의 프로필일 때만 보유머니 표시 -->
+                        <div class="balance-section mb-4">
+                            <h4>보유머니</h4>
+                            <p class="balance">{% if user.balance %}{{ "{:,}".format(user.balance) }}{% else %}0{% endif %}원</p>
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#chargeModal">
+                                <i class="fas fa-plus-circle"></i> 충전하기
+                            </button>
+                        </div>
+                        {% endif %}
+                        
+                        {% if is_viewer and user.id != current_user.id %}
+                        <div class="mb-4">
+                            <form action="{{ url_for('start_chat', user_id=user.id) }}" method="POST" class="d-inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-comments"></i> 채팅하기
+                                </button>
+                            </form>
+                            <!-- 송금 버튼 추가 -->
+                            <button type="button" class="btn btn-success" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#transferModal"
+                                    data-user-id="{{ user.id }}"
+                                    data-username="{{ user.username }}">
+                                <i class="fas fa-money-bill-wave"></i> 송금하기
+                            </button>
+                            <button type="button" class="btn btn-warning" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#reportModal"
+                                    data-report-type="user"
+                                    data-report-id="{{ user.id }}">
+                                <i class="fas fa-flag"></i> 신고하기
+                            </button>
+                        </div>
+                        {% endif %}
+                        
+                        {% if not is_viewer %}
+                        <div class="mb-4">
+                            {% if edit_mode %}
+                            <form method="POST" action="{{ url_for('edit_profile', username=user.username) }}" enctype="multipart/form-data" class="profile-edit-form">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="form_type" value="profile">
+                                <div class="mb-3">
+                                    <label for="profile_image" class="form-label">프로필 이미지 변경</label>
+                                    <input type="file" class="form-control" id="profile_image" name="profile_image" accept="image/*">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="bio" class="form-label">소개글</label>
+                                    <textarea class="form-control" id="bio" name="bio" rows="3" placeholder="자신을 소개해주세요">{{ user.bio or '' }}</textarea>
+                                </div>
+                                <!-- 비밀번호 변경 섹션 -->
+                                <div class="password-change-section mb-4">
+                                    <h5 class="mb-3">비밀번호 변경</h5>
+                                    <div class="mb-3">
+                                        <label for="current_password" class="form-label">현재 비밀번호</label>
+                                        <input type="password" class="form-control" id="current_password" name="current_password">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="new_password" class="form-label">새 비밀번호</label>
+                                        <input type="password" class="form-control" id="new_password" name="new_password">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="confirm_password" class="form-label">새 비밀번호 확인</label>
+                                        <input type="password" class="form-control" id="confirm_password" name="confirm_password">
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-center gap-2">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> 저장하기
+                                    </button>
+                                    <a href="{{ url_for('profile') }}" class="btn btn-secondary">
+                                        <i class="fas fa-times"></i> 취소
+                                    </a>
+                                </div>
+                            </form>
+                            {% else %}
+                            <div class="bio-section mb-4">
+                                <p class="text-muted">{{ user.bio or '소개글이 없습니다.' }}</p>
+                                <a href="{{ url_for('profile', edit='true') }}" class="btn btn-outline-primary">
+                                    <i class="fas fa-edit"></i> 프로필 수정
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <div class="bio-section mb-4">
+                            <p class="text-muted">{{ user.bio or '소개글이 없습니다.' }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- 판매 상품 목록 -->
+                    <div class="mt-5">
+                        <h4 class="mb-4 text-center">판매 상품 목록</h4>
+                        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                            {% for product in products %}
+                            <div class="col">
+                                <div class="card h-100 product-card">
+                                    {% if product.image_path %}
+                                    <img src="{{ url_for('static', filename=product.image_path) }}" class="card-img-top" alt="{{ product.title }}">
+                                    {% else %}
+                                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center">
+                                        <i class="fas fa-image text-muted"></i>
+                                    </div>
+                                    {% endif %}
+                                    <div class="card-body">
+                                        <h5 class="card-title text-truncate">{{ product.title }}</h5>
+                                        <p class="card-text price">{{ "{:,}".format(product.price) }}원</p>
+                                        <p class="card-text"><small class="text-muted">{{ product.created_at|format_datetime }}</small></p>
+                                        <a href="{{ url_for('view_product', product_id=product.id) }}" class="stretched-link"></a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.profile-card {
+    border: none;
+    box-shadow: 0 0 20px rgba(0,0,0,0.08);
+    border-radius: 15px;
+}
+
+.profile-image-container {
+    width: 150px;
+    height: 150px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.profile-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border: 3px solid #fff;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.bio-section {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 10px;
+}
+
+.product-card {
+    transition: transform 0.2s;
+    border: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.product-card .card-img-top {
+    height: 200px;
+    object-fit: cover;
+}
+
+.product-card .price {
+    color: #2c3e50;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.profile-edit-form {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 10px;
+}
+
+.btn {
+    padding: 8px 20px;
+    border-radius: 8px;
+}
+
+.btn-outline-primary {
+    border-width: 2px;
+}
+
+.btn-outline-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.balance-section {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.balance {
+    font-size: 24px;
+    font-weight: bold;
+    color: #28a745;
+}
+</style>
+
+<!-- 송금 모달 추가 -->
+<div class="modal fade" id="transferModal" tabindex="-1" aria-labelledby="transferModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="transferModalLabel">송금하기</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="transferForm" method="POST">
+                <div class="modal-body">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label class="form-label">받는 사람</label>
+                        <p class="form-control-static" id="recipientName"></p>
+                    </div>
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">송금 금액</label>
+                        <input type="number" class="form-control" id="amount" name="amount" required min="1" step="1">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="submit" class="btn btn-success">송금하기</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 충전 모달 -->
+<div class="modal fade" id="chargeModal" tabindex="-1" aria-labelledby="chargeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="chargeModalLabel">보유머니 충전</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('charge_money') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="charge_amount" class="form-label">충전할 금액</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="charge_amount" name="amount" 
+                                   min="1000" step="1000" required placeholder="최소 1,000원">
+                            <span class="input-group-text">원</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="submit" class="btn btn-primary">충전하기</button>
+                </div>
+</form>
+        </div>
+    </div>
+</div>
+
+{% include 'report_modal.html' %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const transferModal = document.getElementById('transferModal');
+    if (transferModal) {
+        transferModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const userId = button.getAttribute('data-user-id');
+            const username = button.getAttribute('data-username');
+            const form = this.querySelector('#transferForm');
+            const recipientName = this.querySelector('#recipientName');
+            
+            form.action = `/transfer/${userId}`;
+            recipientName.textContent = username;
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ other_user.username }}님과의 대화</h5>
+                    <a href="{{ url_for('chat_list') }}" class="btn btn-outline-secondary btn-sm">목록으로</a>
+                </div>
+                <div class="card-body chat-messages" id="messageContainer" style="height: 400px; overflow-y: auto;">
+                    {% for message in messages %}
+                    <div class="message {% if message.sender_id == session.user_id %}sent{% else %}received{% endif %} mb-2">
+                        <div class="message-content p-2 rounded {% if message.sender_id == session.user_id %}bg-primary text-white float-end{% else %}bg-light float-start{% endif %}">
+                            {{ message.content }}
+                        </div>
+                        <div class="message-time small text-muted {% if message.sender_id == session.user_id %}text-end{% endif %} clear-both">
+                            {{ message.created_at.strftime('%H:%M') }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="card-footer">
+                    <form id="messageForm" class="d-flex">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="text" id="messageInput" class="form-control me-2" placeholder="메시지를 입력하세요...">
+                        <button type="submit" class="btn btn-primary">전송</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.chat-messages {
+    padding: 1rem;
+}
+.message {
+    margin-bottom: 1rem;
+    overflow: hidden;
+}
+.message-content {
+    max-width: 70%;
+    padding: 0.5rem 1rem;
+    border-radius: 1rem;
+}
+.sent .message-content {
+    float: right;
+}
+.received .message-content {
+    float: left;
+}
+.message-time {
+    clear: both;
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+}
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const messageForm = document.getElementById('messageForm');
+    const messageInput = document.getElementById('messageInput');
+    const messageContainer = document.getElementById('messageContainer');
+    const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+    let lastMessageId = {% if messages %}{{ messages[-1].id }}{% else %}0{% endif %};
+
+    // 메시지 전송
+    messageForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const content = messageInput.value.trim();
+        if (!content) return;
+
+        try {
+            const response = await fetch(`/api/chat/send/{{ room.id }}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({ message: content })
+            });
+
+            if (response.ok) {
+                messageInput.value = '';
+                const data = await response.json();
+                appendMessage(data, true);
+                lastMessageId = data.id;
+            } else {
+                const error = await response.json();
+                alert(error.error || '메시지 전송에 실패했습니다.');
+            }
+        } catch (error) {
+            console.error('메시지 전송 실패:', error);
+            alert('메시지 전송에 실패했습니다.');
+        }
+    });
+
+    // 새 메시지 확인
+    function checkNewMessages() {
+        fetch(`/api/chat/messages/{{ room.id }}?last_id=${lastMessageId}`, {
+            headers: {
+                'X-CSRFToken': csrfToken
+            }
+        })
+        .then(response => response.json())
+        .then(messages => {
+            messages.forEach(message => {
+                if (message.id > lastMessageId) {
+                    appendMessage(message, message.sender_id === '{{ session.user_id }}');
+                    lastMessageId = message.id;
+                }
+            });
+        })
+        .catch(error => console.error('새 메시지 확인 실패:', error));
+    }
+
+    // 메시지 추가
+    function appendMessage(message, isSent) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${isSent ? 'sent' : 'received'} mb-2`;
+        
+        const time = new Date(message.created_at).toLocaleTimeString('ko-KR', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+
+        messageDiv.innerHTML = `
+            <div class="message-content p-2 rounded ${isSent ? 'bg-primary text-white float-end' : 'bg-light float-start'}">
+                ${message.content}
+            </div>
+            <div class="message-time small text-muted ${isSent ? 'text-end' : ''} clear-both">
+                ${time}
+            </div>
+        `;
+
+        messageContainer.appendChild(messageDiv);
+        messageContainer.scrollTop = messageContainer.scrollHeight;
+    }
+
+    // 주기적으로 새 메시지 확인
+    setInterval(checkNewMessages, 3000);
+
+    // 페이지 로드 시 스크롤을 맨 아래로
+    messageContainer.scrollTop = messageContainer.scrollHeight;
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+{% block title %}대시보드{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <!-- 검색 및 필터 섹션 -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="search-container">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0">
+                        <i class="fas fa-search text-muted"></i>
+                    </span>
+                    <input type="text" class="form-control border-start-0 ps-0" id="search" placeholder="찾으시는 상품을 검색해보세요">
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 text-end">
+            {% if 'user_id' in session %}
+            <a href="{{ url_for('new_product') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> 상품 등록
+            </a>
+            {% else %}
+            <a href="{{ url_for('login') }}" class="btn btn-primary">
+                <i class="fas fa-sign-in-alt"></i> 로그인하여 상품 등록
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 필터 옵션 -->
+    <div class="filter-section mb-4">
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-outline-primary active" data-sort="latest">
+                <i class="fas fa-clock me-1"></i>최신순
+            </button>
+            <button type="button" class="btn btn-outline-primary" data-sort="low-price">
+                <i class="fas fa-sort-amount-down me-1"></i>낮은가격순
+            </button>
+            <button type="button" class="btn btn-outline-primary" data-sort="high-price">
+                <i class="fas fa-sort-amount-up me-1"></i>높은가격순
+            </button>
+        </div>
+    </div>
+
+    <!-- 상품 그리드 -->
+    <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
+        {% for product in products %}
+        <div class="col">
+            <div class="card h-100 product-card">
+                <div class="card-img-wrapper">
+                    {% if product.image_path %}
+                    <img src="{{ url_for('static', filename=product.image_path) }}" class="card-img-top product-img" alt="{{ product.title }}">
+                    {% else %}
+                    <div class="no-image-placeholder">
+                        <i class="fas fa-image"></i>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title text-truncate mb-2">{{ product.title }}</h5>
+                    <p class="card-text price-text mb-2">{{ "{:,}".format(product.price) }}원</p>
+                    <p class="card-text description-text text-truncate mb-3">{{ product.description }}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted" data-timestamp="{{ product.created_at.timestamp() }}">
+                            <i class="far fa-clock me-1"></i>{{ product.created_at|format_datetime }}
+                        </small>
+                    </div>
+                </div>
+                <a href="{{ url_for('view_product', product_id=product.id) }}" class="stretched-link"></a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+.search-container {
+    position: relative;
+}
+
+.search-container .input-group {
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.search-container .input-group-text {
+    border-radius: 0.5rem 0 0 0.5rem;
+}
+
+.search-container .form-control {
+    border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.search-container .form-control:focus {
+    box-shadow: none;
+}
+
+.filter-section {
+    background: white;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-group {
+    width: auto;
+    display: inline-flex;
+    gap: 0.5rem;
+}
+
+.btn-group .btn {
+    border-radius: 0.375rem !important;
+    padding: 0.5rem 1rem;
+}
+
+.product-card {
+    background: white;
+    border: none;
+    border-radius: 1rem;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+.card-img-wrapper {
+    position: relative;
+    padding-top: 75%;
+    overflow: hidden;
+    background-color: #f8f9fa;
+}
+
+.product-img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.product-card:hover .product-img {
+    transform: scale(1.05);
+}
+
+.no-image-placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #dee2e6;
+    font-size: 2rem;
+}
+
+.card-body {
+    padding: 1.25rem;
+}
+
+.card-title {
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.price-text {
+    font-weight: 700;
+    color: var(--primary-color);
+    font-size: 1.2rem;
+}
+
+.description-text {
+    color: #6b7280;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+    .filter-section {
+        overflow-x: auto;
+        white-space: nowrap;
+        padding: 0.75rem;
+    }
+    
+    .btn-group {
+        display: inline-flex;
+        width: auto;
+    }
+    
+    .btn-group .btn {
+        flex: 0 0 auto;
+    }
+    
+    .row-cols-md-3 > * {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+}
+
+@media (max-width: 576px) {
+    .row-cols-md-3 > * {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+    
+    .card-img-wrapper {
+        padding-top: 66.67%;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 검색 기능
+    const searchInput = document.getElementById('search');
+    const productCards = document.querySelectorAll('.product-card');
+
+    searchInput.addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        
+        productCards.forEach(card => {
+            const title = card.querySelector('.card-title').textContent.toLowerCase();
+            const description = card.querySelector('.description-text').textContent.toLowerCase();
+            const parent = card.closest('.col');
+            
+            if (title.includes(searchTerm) || description.includes(searchTerm)) {
+                parent.style.display = '';
+                parent.style.animation = 'fadeIn 0.3s ease-out';
+            } else {
+                parent.style.display = 'none';
+            }
+        });
+    });
+
+    // 정렬 버튼 활성화 및 정렬 기능 구현
+    const sortButtons = document.querySelectorAll('.btn-group .btn');
+    const productContainer = document.querySelector('.row-cols-1');
+    
+    // 페이지 로드 시 최신순 정렬 적용
+    sortByDate();
+
+    sortButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // 버튼 활성화 상태 변경
+            sortButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            
+            // 상품 카드 배열로 변환
+            const products = Array.from(productContainer.children);
+            
+            // 정렬 기준에 따라 정렬
+            switch(this.dataset.sort) {
+                case 'latest':
+                    sortByDate();
+                    break;
+                    
+                case 'low-price':
+                    products.sort((a, b) => {
+                        const priceA = parseInt(a.querySelector('.price-text').textContent.replace(/[^0-9]/g, ''));
+                        const priceB = parseInt(b.querySelector('.price-text').textContent.replace(/[^0-9]/g, ''));
+                        return priceA - priceB;
+                    });
+                    reorderProducts(products);
+                    break;
+                    
+                case 'high-price':
+                    products.sort((a, b) => {
+                        const priceA = parseInt(a.querySelector('.price-text').textContent.replace(/[^0-9]/g, ''));
+                        const priceB = parseInt(b.querySelector('.price-text').textContent.replace(/[^0-9]/g, ''));
+                        return priceB - priceA;
+                    });
+                    reorderProducts(products);
+                    break;
+            }
+        });
+    });
+
+    // 최신순 정렬 함수
+    function sortByDate() {
+        const products = Array.from(productContainer.children);
+        products.sort((a, b) => {
+            const timestampA = parseFloat(a.querySelector('.text-muted').dataset.timestamp);
+            const timestampB = parseFloat(b.querySelector('.text-muted').dataset.timestamp);
+            return timestampB - timestampA;
+        });
+        reorderProducts(products);
+    }
+
+    // 정렬된 상품들을 다시 컨테이너에 추가하는 함수
+    function reorderProducts(products) {
+        products.forEach(product => {
+            productContainer.appendChild(product);
+            product.style.animation = 'fadeIn 0.3s ease-out';
+        });
+    }
+});
+</script>
+{% endblock %}

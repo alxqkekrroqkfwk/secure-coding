@@ -1,0 +1,44 @@
+<!-- Report Modal -->
+<div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="reportModalLabel">신고하기</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="reportForm" method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="mb-3">
+            <label for="reportReason" class="form-label">신고 사유</label>
+            <textarea class="form-control" id="reportReason" name="reason" rows="3" required></textarea>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+            <button type="submit" class="btn btn-danger">신고하기</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const reportModal = document.getElementById('reportModal');
+  if (reportModal) {
+    reportModal.addEventListener('show.bs.modal', function(event) {
+      const button = event.relatedTarget;
+      const form = this.querySelector('#reportForm');
+      const reportType = button.getAttribute('data-report-type');
+      const reportId = button.getAttribute('data-report-id');
+      
+      if (reportType === 'user') {
+        form.action = `/report/user/${reportId}`;
+      } else if (reportType === 'product') {
+        form.action = `/report/product/${reportId}`;
+      }
+    });
+  }
+});
+</script> 

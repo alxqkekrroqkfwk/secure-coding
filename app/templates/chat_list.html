@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>채팅 목록</h2>
+        <a href="{{ url_for('user_list') }}" class="btn btn-primary">새 채팅 시작</a>
+    </div>
+
+    <div class="list-group">
+        {% for chat in chats %}
+        <a href="{{ url_for('chat_room', room_id=chat.room.id) }}" class="list-group-item list-group-item-action">
+            <div class="d-flex w-100 justify-content-between">
+                <h5 class="mb-1">
+                    {% for participant in chat.room.participants %}
+                        {% if participant != current_user %}
+                            {{ participant.username }}
+                        {% endif %}
+                    {% endfor %}
+                </h5>
+                <small class="text-muted">{{ chat.room.last_message.timestamp|format_datetime }}</small>
+            </div>
+            <p class="mb-1">{{ chat.room.last_message.content }}</p>
+            {% if chat.unread_count > 0 %}
+            <span class="badge bg-primary rounded-pill">{{ chat.unread_count }}</span>
+            {% endif %}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %} 

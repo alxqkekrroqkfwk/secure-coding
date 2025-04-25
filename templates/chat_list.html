@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">채팅 목록</h5>
+                    <a href="{{ url_for('user_list') }}" class="btn btn-primary btn-sm">새 채팅 시작</a>
+                </div>
+                <div class="list-group list-group-flush">
+                    {% for chat in chats %}
+                    <a href="{{ url_for('chat_room', room_id=chat.room_id) }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">
+                                    {% for participant in chat.participants %}
+                                        {% if participant.id != current_user.id %}
+                                            {{ participant.username }}
+                                        {% endif %}
+                                    {% endfor %}
+                                </h6>
+                                <p class="mb-1 text-muted">{{ chat.last_message.content if chat.last_message else "대화를 시작해보세요" }}</p>
+                            </div>
+                            <div class="text-right">
+                                <small class="text-muted">{{ format_datetime(chat.last_message.timestamp) if chat.last_message else "" }}</small>
+                                {% if chat.unread_count > 0 %}
+                                <span class="badge badge-primary badge-pill">{{ chat.unread_count }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

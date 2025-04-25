@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}사용자 신고 내역{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-body">
+            <h2 class="card-title mb-4">
+                <i class="fas fa-user-shield me-2"></i>
+                사용자 신고 내역
+            </h2>
+
+            <!-- 사용자 정보 -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">사용자 정보</h5>
+                    <div class="row">
+                        <div class="col-md-8">
+                            <p><strong>사용자명:</strong> {{ user.username }}</p>
+                            <p><strong>상태:</strong> 
+                                {% if user.is_dormant %}
+                                <span class="badge bg-secondary">차단됨</span>
+                                {% else %}
+                                <span class="badge bg-success">활성</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-grid">
+                                <form action="{{ url_for('admin_toggle_user_status', user_id=user.id) }}" method="POST">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn {% if user.is_dormant %}btn-success{% else %}btn-warning{% endif %} w-100" 
+                                            onclick="return confirm('사용자 상태를 변경하시겠습니까?')">
+                                        {% if user.is_dormant %}
+                                        <i class="fas fa-unlock me-1"></i> 차단 해제
+                                        {% else %}
+                                        <i class="fas fa-ban me-1"></i> 사용자 차단
+                                        {% endif %}
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 신고 목록 -->
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>신고자</th>
+                            <th>사유</th>
+                            <th>신고일</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in reports %}
+                        <tr>
+                            <td>{{ report.reporter_username }}</td>
+                            <td>{{ report.reason }}</td>
+                            <td>{{ report.created_at|format_datetime }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.btn {
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+}
+
+.table td {
+    vertical-align: middle;
+}
+</style>
+{% endblock %} 

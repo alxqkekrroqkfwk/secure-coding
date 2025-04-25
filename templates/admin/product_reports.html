@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}상품 신고 내역{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-body">
+            <h2 class="card-title mb-4">
+                <i class="fas fa-flag me-2"></i>
+                상품 신고 내역
+            </h2>
+
+            <!-- 상품 정보 -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">상품 정보</h5>
+                    <div class="row">
+                        <div class="col-md-8">
+                            <p><strong>상품명:</strong> {{ product.title }}</p>
+                            <p><strong>판매자:</strong> {{ product.seller_username }}</p>
+                            <p><strong>가격:</strong> {{ "{:,}".format(product.price) }}원</p>
+                            <p><strong>등록일:</strong> {{ product.created_at|format_datetime }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-grid gap-2">
+                                <a href="{{ url_for('view_product', product_id=product.id) }}" class="btn btn-primary">
+                                    <i class="fas fa-eye me-1"></i> 상품 보기
+                                </a>
+                                <form action="{{ url_for('admin_delete_product', product_id=product.id) }}" method="POST">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-danger w-100" onclick="return confirm('정말 삭제하시겠습니까?')">
+                                        <i class="fas fa-trash-alt me-1"></i> 상품 삭제
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 신고 목록 -->
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>신고자</th>
+                            <th>사유</th>
+                            <th>신고일</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in reports %}
+                        <tr>
+                            <td>{{ report.reporter_username }}</td>
+                            <td>{{ report.reason }}</td>
+                            <td>{{ report.created_at|format_datetime }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.btn {
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+}
+
+.table td {
+    vertical-align: middle;
+}
+</style>
+{% endblock %} 

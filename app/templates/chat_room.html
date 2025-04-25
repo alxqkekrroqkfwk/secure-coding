@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            {% for participant in room.participants %}
+                {% if participant != current_user %}
+                    {{ participant.username }}와의 대화
+                {% endif %}
+            {% endfor %}
+        </h2>
+        <a href="{{ url_for('chat_list') }}" class="btn btn-secondary">목록으로</a>
+    </div>
+
+    <div class="chat-messages mb-4" style="height: 500px; overflow-y: auto;">
+        {% for message in messages %}
+        <div class="message {% if message.sender == current_user %}text-end{% endif %} mb-3">
+            <div class="message-content {% if message.sender == current_user %}bg-primary text-white{% else %}bg-light{% endif %} d-inline-block p-2 rounded">
+                {{ message.content }}
+            </div>
+            <small class="text-muted d-block">{{ message.timestamp|format_datetime }}</small>
+        </div>
+        {% endfor %}
+    </div>
+
+    <form method="POST" class="message-form">
+        <div class="input-group">
+            <input type="text" name="message" class="form-control" placeholder="메시지를 입력하세요..." required>
+            <button type="submit" class="btn btn-primary">전송</button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chatMessages = document.querySelector('.chat-messages');
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    const messageForm = document.querySelector('.message-form');
+    const messageInput = messageForm.querySelector('input[name="message"]');
+
+    messageForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        fetch(window.location.href, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                'message': messageInput.value
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message text-end mb-3';
+                messageDiv.innerHTML = `
+                    <div class="message-content bg-primary text-white d-inline-block p-2 rounded">
+                        ${messageInput.value}
+                    </div>
+                    <small class="text-muted d-block">방금 전</small>
+                `;
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                messageInput.value = '';
+            }
+        });
+    });
+});
+</script>
+
+<style>
+.message-content {
+    max-width: 70%;
+    word-wrap: break-word;
+}
+</style>
+{% endblock %} 

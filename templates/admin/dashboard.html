@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+
+{% block title %}관리자 대시보드{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2 class="d-flex align-items-center">
+                <i class="fas fa-shield-alt me-2"></i>
+                관리자 대시보드
+            </h2>
+        </div>
+    </div>
+
+    <!-- 통계 카드 -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-box me-2"></i>
+                        전체 상품
+                    </h5>
+                    <p class="card-text display-6">{{ products|length }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-flag me-2"></i>
+                        신고된 상품
+                    </h5>
+                    <p class="card-text display-6">{{ reported_products|length }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-user-shield me-2"></i>
+                        신고된 사용자
+                    </h5>
+                    <p class="card-text display-6">{{ reported_users|length }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 탭 네비게이션 -->
+    <div class="card">
+        <div class="card-body">
+            <ul class="nav nav-pills mb-4" id="adminTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="products-tab" data-bs-toggle="pill" data-bs-target="#products" type="button" role="tab">
+                        <i class="fas fa-box me-1"></i>
+                        전체 상품
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="reported-products-tab" data-bs-toggle="pill" data-bs-target="#reported-products" type="button" role="tab">
+                        <i class="fas fa-flag me-1"></i>
+                        신고된 상품
+                        <span class="badge bg-danger ms-1">{{ reported_products|length }}</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="reported-users-tab" data-bs-toggle="pill" data-bs-target="#reported-users" type="button" role="tab">
+                        <i class="fas fa-user-shield me-1"></i>
+                        신고된 사용자
+                        <span class="badge bg-danger ms-1">{{ reported_users|length }}</span>
+                    </button>
+                </li>
+            </ul>
+            
+            <!-- 탭 컨텐츠 -->
+            <div class="tab-content" id="adminTabsContent">
+                <!-- 전체 상품 목록 -->
+                <div class="tab-pane fade show active" id="products" role="tabpanel">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-nowrap">상품명</th>
+                                    <th class="text-nowrap">판매자</th>
+                                    <th class="text-nowrap">가격</th>
+                                    <th class="text-nowrap">등록일</th>
+                                    <th class="text-nowrap">신고</th>
+                                    <th style="width: 280px;" class="text-nowrap">관리</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for product in products %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('view_product', product_id=product.id) }}" class="text-decoration-none" target="_blank">
+                                            {{ product.title }}
+                                        </a>
+                                    </td>
+                                    <td>{{ product.seller_username }}</td>
+                                    <td>{{ "{:,}".format(product.price) }}원</td>
+                                    <td>{{ product.created_at|format_datetime }}</td>
+                                    <td>
+                                        {% if product.product_report_count > 0 %}
+                                        <span class="badge bg-danger">{{ product.product_report_count }}</span>
+                                        {% else %}
+                                        <span class="text-muted">0</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="d-flex gap-2">
+                                            <a href="{{ url_for('admin_product_reports', product_id=product.id) }}" 
+                                               class="btn btn-outline-info w-50">
+                                                <i class="fas fa-list me-1"></i>
+                                                신고내역
+                                            </a>
+                                            <form action="{{ url_for('admin_delete_product', product_id=product.id) }}" 
+                                                  method="POST" class="w-50">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="btn btn-outline-danger w-100" 
+                                                        onclick="return confirm('정말 삭제하시겠습니까?')">
+                                                    <i class="fas fa-trash-alt me-1"></i>
+                                                    삭제
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- 신고된 상품 목록 -->
+                <div class="tab-pane fade" id="reported-products" role="tabpanel">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-nowrap">상품명</th>
+                                    <th class="text-nowrap">판매자</th>
+                                    <th class="text-nowrap">신고 수</th>
+                                    <th style="width: 280px;" class="text-nowrap">관리</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for product in reported_products %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('view_product', product_id=product.id) }}" class="text-decoration-none" target="_blank">
+                                            {{ product.title }}
+                                        </a>
+                                    </td>
+                                    <td>{{ product.seller_username }}</td>
+                                    <td>
+                                        <span class="badge bg-danger">{{ product.product_report_count }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex gap-2">
+                                            <a href="{{ url_for('admin_product_reports', product_id=product.id) }}" 
+                                               class="btn btn-outline-info w-50">
+                                                <i class="fas fa-list me-1"></i>
+                                                신고내역
+                                            </a>
+                                            <form action="{{ url_for('admin_delete_product', product_id=product.id) }}" 
+                                                  method="POST" class="w-50">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="btn btn-outline-danger w-100" 
+                                                        onclick="return confirm('정말 삭제하시겠습니까?')">
+                                                    <i class="fas fa-trash-alt me-1"></i>
+                                                    삭제
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- 신고된 사용자 목록 -->
+                <div class="tab-pane fade" id="reported-users" role="tabpanel">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-nowrap">사용자명</th>
+                                    <th class="text-nowrap">신고 수</th>
+                                    <th class="text-nowrap">상태</th>
+                                    <th style="width: 280px;" class="text-nowrap">관리</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in reported_users %}
+                                <tr>
+                                    <td>{{ user.username }}</td>
+                                    <td>
+                                        <span class="badge bg-danger">{{ user.user_report_count }}</span>
+                                    </td>
+                                    <td>
+                                        {% if user.is_dormant %}
+                                        <span class="badge bg-secondary">차단됨</span>
+                                        {% else %}
+                                        <span class="badge bg-success">활성</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="d-flex gap-2">
+                                            <a href="{{ url_for('admin_user_reports', user_id=user.id) }}" 
+                                               class="btn btn-outline-info w-50">
+                                                <i class="fas fa-list me-1"></i>
+                                                신고내역
+                                            </a>
+                                            <form action="{{ url_for('admin_toggle_user_status', user_id=user.id) }}" 
+                                                  method="POST" class="w-50">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="btn {% if user.is_dormant %}btn-outline-success{% else %}btn-outline-warning{% endif %} w-100"
+                                                        onclick="return confirm('사용자 상태를 변경하시겠습니까?')">
+                                                    {% if user.is_dormant %}
+                                                    <i class="fas fa-unlock me-1"></i>
+                                                    차단해제
+                                                    {% else %}
+                                                    <i class="fas fa-ban me-1"></i>
+                                                    차단
+                                                    {% endif %}
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.nav-pills .nav-link {
+    color: #495057;
+    background-color: #f8f9fa;
+    margin-right: 0.5rem;
+}
+
+.nav-pills .nav-link.active {
+    background-color: #0d6efd;
+    color: white;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.display-6 {
+    font-size: 2.5rem;
+    font-weight: 300;
+    line-height: 1.2;
+}
+
+/* 버튼 관련 스타일 */
+.btn {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.d-flex.gap-2 {
+    width: 100%;
+}
+
+.d-flex.gap-2 > * {
+    flex: 1;
+}
+
+.table th[style*="width"] {
+    width: 280px;
+}
+
+.text-nowrap {
+    white-space: nowrap;
+    padding: 1rem 0.75rem;
+}
+
+.table th {
+    font-weight: 500;
+}
+</style>
+{% endblock %} 
