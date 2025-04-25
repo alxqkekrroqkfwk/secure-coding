@@ -35,21 +35,9 @@ conda activate secure-coding
 python app.py
 ```
 
-기본적으로 서버는 http://localhost:8080 에서 실행됩니다.
-
-## 외부 접속 설정 (선택사항)
-
-외부에서 접속 가능한 URL을 생성하려면 ngrok을 사용할 수 있습니다:
-
-1. ngrok 설치 (Ubuntu/Debian):
-```bash
-sudo snap install ngrok
-```
-
-2. ngrok을 통한 터널링:
-```bash
-ngrok http 8080
-```
+2. 웹 브라우저에서 다음 URL로 접속:
+- 로컬 접속: http://localhost:8080
+- 네트워크 접속: http://<IP주소>:8080
 
 ## 주요 기능
 
@@ -68,5 +56,3 @@ ngrok http 8080
 - 안전한 파일 업로드
 - 비밀번호 암호화
 - 세션 관리
-
-```
